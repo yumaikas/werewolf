@@ -48,13 +48,13 @@ func TestDb() {
 	Insert Into Outline(ParentId, Content, OutlineOrder) values 
 		(NULL, "TOP", 0), 
 		(1, "A", 1), 
-		(2, "A.A", 1), 
-		(2, "A.B", 2), 
+		(2, "A.A", 4), 
+		(2, "A.B", 1), 
 		(1, "B", 2),
 		(5, "B.A", 1), 
-		(5, "B.B", 2);
+		(5, "B.B", 4);
 	`)
-	nodes, err := GetNodesUnder(1)
+	nodes, err := GetNodesUnder(2)
 
 	if err != nil {
 		fmt.Println(err)
@@ -62,7 +62,7 @@ func TestDb() {
 	}
 	for _, n := range nodes {
 		fmt.Print(strings.Repeat("*", n.RelativeDepth+1))
-		fmt.Println(" " + n.Content.String)
+		fmt.Println(" "+n.Content.String, " ", n.OutlineOrder.Int64, " ", n.Id)
 	}
 }
 
@@ -70,25 +70,45 @@ func GetNodesUnder(id int64) ([]OutlineNodeDB, error) {
 	results := make([]OutlineNodeDB, 0)
 
 	err := db.Select(&results, `
-	WITH RECURSIVE nodes(Id, ParentId, depth) as (
-		Select Id, ParentId, 0 from Outline where Id = ?
+	WITH RECURSIVE nodes(
+		Id, 
+		ParentId, 
+		Depth, 
+		OutlineOrder,
+		Content,
+		Meta,
+		Created,
+		Updated,
+		Deleted
+	) as (
+		Select 
+			Id, 
+			ParentId, 
+			0, 
+			Outline.OutlineOrder,
+			Outline.Content as Content,
+			Outline.Meta as Meta,
+			Outline.Created as Created,
+			Outline.Updated as Updated,
+			Outline.Deleted as Deleted
+		From Outline where Id = ?
 		UNION ALL
-		Select Outline.Id, Outline.ParentId, nodes.depth+1
+		Select 
+			Outline.Id as Id, 
+			Outline.ParentId as ParentId, 
+			Nodes.Depth as Depth,
+			Outline.OutlineOrder as OutlineOrder,
+			Outline.Content as Content,
+			Outline.Meta as Meta,
+			Outline.Created as Created,
+			Outline.Updated as Updated,
+			Outline.Deleted as Deleted
 	    from Outline  
 	    JOIN nodes ON Outline.ParentId = nodes.Id
-	Order By 3 DESC
+		Order By 3 DESC, 4 ASC
 	) 
-	Select 
-	    Outline.Id as Id, 
-		Outline.ParentId as ParentId, 
-		Nodes.Depth as Depth,
-		Outline.Content as Content,
-		Outline.Meta as Meta,
-		Outline.Created as Created,
-		Outline.Updated as Updated,
-		Outline.Deleted as Deleted
-	from Nodes
-	INNER JOIN Outline on Nodes.Id = Outline.Id
+	Select * from Nodes
+
 	`, id)
 	return results, err
 }
@@ -97,7 +117,8 @@ type OutlineNodeDB struct {
 	Id       int64         `db:"Id"`
 	ParentId sql.NullInt64 `db:"ParentId"`
 	// The relative depth of this node from the parent of the current query
-	RelativeDepth int `db:"Depth"`
+	RelativeDepth int           `db:"Depth"`
+	OutlineOrder  sql.NullInt64 `db:"OutlineOrder"`
 
 	Content sql.NullString `db:"Content"`
 	Meta    sql.NullString `db:"Meta"`
