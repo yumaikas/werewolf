@@ -2,43 +2,35 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-chi/chi"
 	"time"
 )
 
 func main() {
 	fmt.Println("Werewolf is an outliner that works based on SQLite and GoLua")
-	InitDb()
-	TestDb()
+	TestInitDb()
+	TestDbEX()
+
+	r := chi.NewRouter()
+	Route(r)
+
+	// TestDb()
+}
+
+func Route(r chi.Router) {
+
 }
 
 // Do I even need this structure for this, if I get
 type OutlineNode struct {
-	//
 	Id, ParentId int64
 	Title        string
 	Content      string
 	Meta         string
+	OutlineOrder int64
 	Created      time.Time
 	Updated      time.Time
 	Deleted      time.Time
-}
-
-// Insert the node at the given IDX in parent, or at the end if the idx is too large
-func Insert(parent, child *OutlineNode, idx int) error {
-	return nil
-
-}
-
-// Remove the node with the ID given, using idx
-// as a hint for where check for the node, reverting to a search if the ID doesn't match
-func Remove(parent *OutlineNode, id int64, idx int) error {
-	return nil
-}
-
-//
-//
-func Reorder(parent *OutlineNode, new_order_ids []int) error {
-	return nil
 }
 
 /*
