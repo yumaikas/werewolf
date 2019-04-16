@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 	"strings"
 )
 
@@ -34,22 +36,26 @@ func CreateDb() {
 		OutlineOrder int, 
 		Content text,
 		Meta text,
-		Created int, -- unix timestamp
-		Updated int, -- unix timestamp
+		Created int, -- Unix timestamp
+		Updated int, -- Unix timestamp
 		Deleted int -- Unix timestamp
 	);
 
 	Create Table If Not Exists Scripts (
 		Id INTEGER PRIMARY KEY,
 		Name text,
-		Code text
+		Code text,
+		Meta text,
+		Created int, -- Unix timestamp
+		Updated int, -- Unix timestamp
+		Deleted int -- Unix timestamp
 	);
 	`)
 }
 
 func TestDb() {
 	// Testing only
-	db.MustExec(`DROP TABLE IF EXISTS Outline`)
+	db.MustExec(`DROP TABLE IF EXISTS Outline;`)
 	CreateDb()
 	// Testing Purposes only
 	db.MustExec(`
@@ -65,16 +71,50 @@ func TestDb() {
 	PrintNodesUnder(1)
 }
 
+/*
+What lua bits do I need?
+
+# Events
+- I need something to add content to an existing Outline Node when it's loaded?
+
+# REPL
+- Gather nodes
+
+# Nodes
+- Create custom node types
+- Search nodes
+- get the descendants of nodes
+- Add virtual subnodes
+- Add global gadgets
+
+"type:gadget type:custom-node type:global-gadget"
+"enabled:false enabled:true"
+""
+
+*/
+
+//
+func TestScriptDb() {
+	CreateScript("", "type:gadget type:cust", `
+
+	`)
+}
+
+func PrintNodes(nodes []OutlineNodeDB) {
+	for _, n := range nodes {
+		fmt.Print(strings.Repeat("*", n.RelativeDepth+1))
+		fmt.Println(" "+n.Content.String, " ", n.Id)
+	}
+}
+
 func PrintNodesUnder(id int64) {
 	nodes, err := GetNodesUnder(id)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	for _, n := range nodes {
-		fmt.Print(strings.Repeat("*", n.RelativeDepth+1))
-		fmt.Println(" "+n.Content.String, " ", n.Id)
-	}
+	PrintNodes(nodes)
+	HomePageView(os.Stdout, nodes)
 }
 
 func die(e error) {
@@ -85,7 +125,7 @@ func die(e error) {
 
 func TestDbEX() {
 	TestDb()
-	id, err := CreateNode(OutlineNode{
+	id, err := CreateNode(OutlineNodeTest{
 		ParentId:     2,
 		Content:      "A.B.C",
 		OutlineOrder: 6,
@@ -97,7 +137,29 @@ func TestDbEX() {
 	fmt.Println("New Node Id", id)
 	die(Reparent(8, 5, 10))
 	PrintNodesUnder(1)
+	roots, err := GetRootNodes()
+	die(err)
+	PrintNodes(roots)
 	// TODO: Test remove and reorder later
+}
+
+func GetRootNodes() ([]OutlineNodeDB, error) {
+	results := make([]OutlineNodeDB, 0)
+
+	err := db.Select(&results, `
+		Select 
+			Id, 
+			ParentId, 
+			0 as Depth, 
+			Outline.OutlineOrder,
+			Outline.Content as Content,
+			Outline.Meta as Meta,
+			Outline.Created as Created,
+			Outline.Updated as Updated,
+			Outline.Deleted as Deleted
+		From Outline where ParentId is null
+	`)
+	return results, err
 }
 
 func GetNodesUnder(id int64) ([]OutlineNodeDB, error) {
@@ -148,6 +210,12 @@ func GetNodesUnder(id int64) ([]OutlineNodeDB, error) {
 	return results, err
 }
 
+func ScriptContentForName(name string) (string, error) {
+	var content string
+	err := db.Get(&content, `Select Content from Scripts where name = ?;`, name)
+	return content, err
+}
+
 type OutlineNodeDB struct {
 	Id       int64         `db:"Id"`
 	ParentId sql.NullInt64 `db:"ParentId"`
@@ -160,6 +228,69 @@ type OutlineNodeDB struct {
 	Created sql.NullInt64  `db:"Created"`
 	Updated sql.NullInt64  `db:"Updated"`
 	Deleted sql.NullInt64  `db:"Deleted"`
+}
+
+type OutlineTree struct {
+	Self     OutlineNodeDB
+	Children []*OutlineTree
+}
+
+func (me *OutlineTree) AddChild(c *OutlineTree) {
+	if len(me.Children) == 0 {
+		me.Children = []*OutlineTree{c}
+		return
+	}
+	me.Children = append(me.Children, c)
+}
+
+func inSet(set map[int64]*OutlineNodeDB, id int64) bool {
+	_, found := set[id]
+	return found
+}
+
+// Depends on parent nodes being listed before their children...
+// Given a list of nodes, return a list of roots
+func NodesToTree(nodes []OutlineNodeDB) []*OutlineTree {
+	// First, build a set of all the ids
+	ids := make(map[int64]*OutlineNodeDB)
+	idList := make([]int64, 0)
+	for _, n := range nodes {
+		ids[n.Id] = &n
+		idList = append(idList, n.Id)
+	}
+	topLevels := make([]*OutlineTree, 0)
+	treeMap := make(map[int64]*OutlineTree)
+	for _, n := range nodes {
+
+		branch := OutlineTree{Self: n}
+		treeMap[n.Id] = &branch
+		// Handle top-level nodes
+		if !n.ParentId.Valid || !inSet(ids, n.ParentId.Int64) {
+			topLevels = append(topLevels, &branch)
+			continue
+		}
+		// If not a top-level node, add it to it's parent node
+		// So, I'm getting an error where this treemap
+		// isn't holding one of the parents like it should yet?
+		// Perhaps I need an check here, and add the parent node if it doesn't exist?
+		// TODO: Try to fix this later, with more food in my body.
+		treeMap[n.ParentId.Int64].AddChild(&branch)
+	}
+	return topLevels
+}
+
+func Int64Or(base sql.NullInt64, fallback int64) int64 {
+	if base.Valid {
+		return base.Int64
+	}
+	return fallback
+}
+
+func StringOr(base sql.NullString, fallback string) string {
+	if base.Valid {
+		return base.String
+	}
+	return fallback
 }
 
 /*
@@ -175,7 +306,7 @@ type OutlineNodeDB struct {
 	);
 */
 // Create a node
-func CreateNode(node OutlineNode) (int64, error) {
+func CreateNode(node OutlineNodeTest) (int64, error) {
 
 	res, err := db.Exec(`Insert into Outline(ParentId, OutlineOrder, Content, Meta, Created)
 	values (?, ?, ?, ?, strftime('%s', 'now'));`,
@@ -233,4 +364,24 @@ func Reorder(parentId int, newOrderIds []int) error {
 		}
 	}
 	return nil
+}
+
+func CreateScript(name, meta, content string) (int64, error) {
+	results, _ := db.Exec(`
+	Insert Into Scripts(Name, Code, Meta, Created) 
+	Values (?, ?, ?, strftime('%s', 'now');
+	`, name, content, meta)
+	return results.LastInsertId()
+}
+
+func UpdateScript(id int64, name, content string) (int64, error) {
+	results, _ := db.Exec(`
+	Update Scripts
+	   Set 
+		   Name = ?,
+	       Code = ?,
+		   Updated = strftime('%s', 'now')
+	   where Id = ?;
+	`, name, content, id)
+	return results.LastInsertId()
 }
