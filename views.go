@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	. "yumaikas/werewolf/templates"
 )
@@ -26,15 +27,27 @@ func renderNodesInOutlineOrder(nodes []*OutlineTree) func(Context) {
 	}
 }
 
+func nodeRecur(n OutlineTree) func(Context) {
+	return func(ctx Context) {
+		for _, c := range n.Children {
+			renderNodeTree(*c)(ctx)
+		}
+	}
+}
+
+// Emit the various links for a node
+func nodeInfo(n OutlineTree) func(Context) {
+	id := n.Self.Id
+	return A(Atr.Href(fmt.Sprint("/node/", id, "/page")), Str("*"))
+}
+
 func renderNodeTree(n OutlineTree) func(Context) {
 	content := StringOr(n.Self.Content, "")
 	if len(n.Children) > 0 {
-		return Div(Atr, Str(content), func(ctx Context) {
-			for _, c := range n.Children {
-				renderNodeTree(*c)(ctx)
-			}
-		})
+		return Div(Atr, Str(content), nodeInfo(n), nodeRecur(n))
 	} else {
-		return Div(Atr, Str(content))
+		return Div(Atr, Str(content), nodeInfo(n))
 	}
 }
+
+// TODO: Make a node function

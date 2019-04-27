@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
@@ -322,6 +322,14 @@ func CreateNode(node OutlineNodeTest) (int64, error) {
 
 	return id, nil
 }
+
+/*
+// Update a node's content and/or meta
+// TODO-@meta: Add in meta support here
+func UpdateNodeContent(id int64, string newContent) (int64, error) {
+	db.Exec(`Update Outline Set `
+}
+*/
 
 // Move the current node under a new parent with a given order number.
 func Reparent(Id, NewParentId, OrderNum int64) error {

@@ -3,18 +3,29 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 func main() {
 	fmt.Println("Werewolf is an outliner that works based on SQLite and GoLua")
+	// TODO: Throw testing behind a CLI flag
 	TestInitDb()
-	TestDbEX()
+	// TODO: Create a real db init function
+	// TestDbEX()
 
 	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	// TODO: Build a custom 500 page recoverer at some point.
+	r.Use(middleware.Recoverer)
 	Route(r)
-	// TestDb()
+
+	err := http.ListenAndServe(":4242", r)
+	fmt.Println(err)
 }
 
 // This app is going to have a /shared route, everything else is going to be admin stuff
@@ -30,6 +41,10 @@ func Route(r chi.Router) {
 	// Create a new node with the information given
 	r.Post("/node/create", CreateNodeForm)
 
+	// Edit node
+	// WIP
+	// r.Post("/node/{id}/edit", UpdateNode)
+
 	// Reparent a node
 	r.Post("/node/{id}/reparent", ReparentNode)
 
@@ -38,6 +53,7 @@ func Route(r chi.Router) {
 
 	// Reorder the given list of nodes
 	r.Post("/nodes/reorder", ReorderNodes)
+
 }
 
 func HomePage(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +64,14 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 
 // Render a page with a node as it's root
 func ShowNodePage(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	die(err)
+	nodes, err := GetNodesUnder(id)
+	HomePageView(w, nodes)
 }
+
+// func UpdateNode
 
 // Only show the HTML fragment (or JSON data, though that's not going to be the starting point)
 func ShowNodeContent(w http.ResponseWriter, r *http.Request) {
