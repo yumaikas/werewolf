@@ -35,15 +35,17 @@ func Route(r chi.Router) {
 
 	// The HTML page for a node
 	r.Get("/node/{id}/page", ShowNodePage)
+	r.Get("/node/{id}/page/", ShowNodePage)
 	// The data for a node, without the surrounding page bits
 	r.Get("/node/{id}/content", ShowNodeContent)
+	r.Get("/node/{id}/content/", ShowNodeContent)
 
 	// Create a new node with the information given
 	r.Post("/node/create", CreateNodeForm)
+	r.Post("/node/create/", CreateNodeForm)
 
 	// Edit node
-	// WIP
-	// r.Post("/node/{id}/edit", UpdateNode)
+	r.Post("/node/{id}/edit", UpdateNode)
 
 	// Reparent a node
 	r.Post("/node/{id}/reparent", ReparentNode)
@@ -68,10 +70,21 @@ func ShowNodePage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	die(err)
 	nodes, err := GetNodesUnder(id)
+	die(err)
 	HomePageView(w, nodes)
 }
 
-// func UpdateNode
+// Update a given node's content
+// TODO: Also detect and update the meta attributes of the node, if present
+func UpdateNode(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	die(err)
+	content := r.PostFormValue("content")
+	die(UpdateNodeContent(id, content))
+	http.Redirect(w, r, fmt.Sprint("/node/", id, "/page/"), 301)
+}
 
 // Only show the HTML fragment (or JSON data, though that's not going to be the starting point)
 func ShowNodeContent(w http.ResponseWriter, r *http.Request) {

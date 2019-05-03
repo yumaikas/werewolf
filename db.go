@@ -323,13 +323,16 @@ func CreateNode(node OutlineNodeTest) (int64, error) {
 	return id, nil
 }
 
-/*
 // Update a node's content and/or meta
 // TODO-@meta: Add in meta support here
-func UpdateNodeContent(id int64, string newContent) (int64, error) {
-	db.Exec(`Update Outline Set `
+func UpdateNodeContent(id int64, newContent string) error {
+	_, err := db.Exec(`
+	Update Outline 
+		Set Content = ?, 
+		Updated = strftime('now', '%s')
+	where Id = ?`, newContent, id)
+	return err
 }
-*/
 
 // Move the current node under a new parent with a given order number.
 func Reparent(Id, NewParentId, OrderNum int64) error {

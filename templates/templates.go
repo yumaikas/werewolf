@@ -251,7 +251,15 @@ func (ctx Context) writeLine(content string) {
 }
 
 func BasePage(title string, inner ...func(Context)) func(Context) {
-	return Html(Title(Atr, Str(title)), Body(inner...))
+	return Html(Title(Atr, Str(title)),
+
+		Body(inner...))
+}
+
+func Concat(inner ...func(Context)) func(Context) {
+	return func(ctx Context) {
+		ctx.WriteTags(inner...)
+	}
 }
 
 func Html(inner ...func(Context)) func(Context) {
@@ -259,13 +267,15 @@ func Html(inner ...func(Context)) func(Context) {
 		ctx.writeLine("<!DOCTYPE html>")
 		ctx.writeLine("<html>")
 		ctx.writeLine("<meta charset=\"utf-8\">")
+		// Add in the mobile-page magic tag.
+		ctx.writeLine(`<meta name="viewport" content="width=device-width, initial-scale=1.0">`)
 		ctx.WriteTags(inner...)
 		ctx.writeLine("</html>")
 	}
 }
 
-func RawStr(content string) func (Context) {
-	return func (ctx Context) {
+func RawStr(content string) func(Context) {
+	return func(ctx Context) {
 		ctx.write(content)
 	}
 }
