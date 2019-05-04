@@ -15,6 +15,7 @@ dom.create = function(element) {
 //
 // - And then start saving changes to the backend
 // TODO: Add UI for creating new nodes
+// - WIP: There's a start on the back end for this
 // TODO: Add UI for deleting nodes
 // TODO: Add UI for re-ordering and re-paretning nodes
 
@@ -23,7 +24,6 @@ var werewolf = (function() {
     exports.nodeSaveClick = function(id) {
         return function(event) {
             // Kick off the reqwest
-            // Set 
             var button = event.target;
             var outer = event.target.parentNode;
             var input = nodeInputById(id);
@@ -38,6 +38,8 @@ var werewolf = (function() {
                 button.remove();
                 input.remove();
                 outer.innerHTML = content;
+                // Get ready to save it all again
+                outer.addEventListener('click', exports.nodeEditClick);
             }).fail(function() {
                 outer.innerHTML = "Unable to save node: " + content;
             });
