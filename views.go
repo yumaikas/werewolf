@@ -28,8 +28,7 @@ var outlineStyles = `
 `
 
 func HomePageView(w io.Writer, nodes []OutlineNodeDB) {
-	// TODO: Clean this up to not use a special node ID. Maybe
-	// have a rootlist?
+	// This takes a list of outline roots and renders them
 	render(w, BasePage("Outliner Home",
 		Style(outlineStyles),
 		renderNodesInOutlineOrder(NodesToTree(nodes)),
@@ -77,7 +76,6 @@ func parentLink(n OutlineTree) string {
 	return pageLink(n)
 }
 
-// TODO: Add a content link...
 func pageLink(n OutlineTree) string {
 	return fmt.Sprint("/node/", n.Self.Id, "/page")
 }
