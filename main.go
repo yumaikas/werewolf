@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -9,23 +10,34 @@ import (
 	"time"
 )
 
+var runTests = flag.Bool("test", false, "Set to run tests")
+var runServer = flag.Bool("serve", false, "Set to run web server")
+
 func main() {
+	flag.Parse()
 	fmt.Println("Werewolf is an outliner that works based on SQLite and GoLua")
-	// TODO: Throw testing behind a CLI flag
-	TestInitDb()
 	// TODO: Create a real db init function
-	// TestDbEX()
+	TestInitDb()
+	if flag.NFlag() == 0 {
+		flag.PrintDefaults()
+	}
+	if *runTests {
+		// Throw testing behind a CLI flag
+		TestDbEX()
+	}
 
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	// TODO: Build a custom 500 page recoverer at some point.
-	r.Use(middleware.Recoverer)
-	Route(r)
+	if *runServer {
+		r := chi.NewRouter()
+		r.Use(middleware.RequestID)
+		r.Use(middleware.RealIP)
+		r.Use(middleware.Logger)
+		// TODO: Build a custom 500 page recoverer at some point.
+		r.Use(middleware.Recoverer)
+		Route(r)
 
-	err := http.ListenAndServe(":4242", r)
-	fmt.Println(err)
+		err := http.ListenAndServe(":4242", r)
+		fmt.Println(err)
+	}
 }
 
 // This app is going to have a /shared route, everything else is going to be admin stuff
