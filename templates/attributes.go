@@ -19,6 +19,10 @@ func (attrs AttributeChain) Id(id string) AttributeChain {
 	return attrs.Add("id", id)
 }
 
+func (attrs AttributeChain) Open() AttributeChain {
+	return attrs.AddVoid("open")
+}
+
 func (attrs AttributeChain) Value(value string) AttributeChain {
 	return attrs.Add("value", value)
 }

@@ -61,6 +61,7 @@ var werewolf = (function() {
     }
 
     exports.nodeEditClick = function(event) {
+        event.preventDefault();
         var child = event.target;
         var id = event.target.dataset.id;
         // Keep this from firing twice

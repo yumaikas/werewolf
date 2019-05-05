@@ -1,5 +1,12 @@
 package main
 
+import (
+	"fmt"
+	"github.com/go-chi/chi"
+	"net/http"
+	"strconv"
+)
+
 // This app is going to have a /shared route, everything else is going to be admin stuff
 func Route(r chi.Router) {
 	// Outline root, show all top-level nodes.
@@ -79,7 +86,10 @@ func CreateNodeReq(w http.ResponseWriter, r *http.Request) {
 		OutlineOrder: outlineOrder,
 		Meta:         "",
 	})
+	die(err)
 	// TODO: Return node later
+	// If everything succeeds, write out the id into the response
+	fmt.Fprintf(w, "%s", id)
 }
 
 func ReparentNode(w http.ResponseWriter, r *http.Request) {

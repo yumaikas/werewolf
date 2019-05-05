@@ -98,9 +98,13 @@ func renderNodeTree(n OutlineTree) func(Context) {
 	if len(n.Children) <= 0 {
 		inner = func(ctx Context) {}
 	}
-	return Div(Atr.
+	return Details(Atr.
 		Class(class).
 		Id(fmt.Sprint("node-", id)),
-		Span(Atr.Add("data-id", fmt.Sprint(id)).Class("outline-node-content"), Str(content)),
-		nodeInfo(n), inner)
+		Summary(Atr,
+			Span(Atr.
+				Add("data-id", fmt.Sprint(id)).
+				Class("outline-node-content"), Str(content)),
+			nodeInfo(n)),
+		inner)
 }

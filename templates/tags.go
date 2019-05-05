@@ -16,6 +16,14 @@ func Div(attributes AttributeChain, inner ...func(Context)) func(Context) {
 	return WriteTag("div", attributes, inner...)
 }
 
+func Details(attributes AttributeChain, inner ...func(Context)) func(Context) {
+	return WriteTag("details", attributes, inner...)
+}
+
+func Summary(attributes AttributeChain, inner ...func(Context)) func(Context) {
+	return WriteTag("summary", attributes, inner...)
+}
+
 func Span(attributes AttributeChain, inner ...func(Context)) func(Context) {
 	return WriteTag("span", attributes, inner...)
 }
