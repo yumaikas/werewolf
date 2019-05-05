@@ -27,6 +27,7 @@ I'm going to try to use this as a deferred work tracker for the team of myself.
 I plan on taking a little time every day I sit down to work on this and try to knock off at least one or two TODOs, or make them clearer, so that people other than myself could stand a chance of understanding them.
 
 -------
+
 app.go:// TODO: Also detect and update the meta attributes of the node, if present
 app.go:	// TODO: Return node later
 main.go:	// TODO: Create a real db init function
