@@ -49,6 +49,8 @@ func renderNodesInOutlineOrder(nodes []*OutlineTree) func(Context) {
 			Div(Atr,
 				Str("Commands: "),
 				A(Atr.Href(parentLink(top)), Str("Up")),
+				A(Atr.UnsafeHref("javascript:werewolf.expandAll();"), Str("Expand all")),
+				A(Atr.UnsafeHref("javascript:werewolf.collapseAll();"), Str("Collapse all")),
 				Hr(),
 			)(ctx)
 

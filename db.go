@@ -36,6 +36,7 @@ func CreateDb() {
 		OutlineOrder int, 
 		Content text,
 		Meta text,
+		IsExpanded int,
 		Created int, -- Unix timestamp
 		Updated int, -- Unix timestamp
 		Deleted int -- Unix timestamp
