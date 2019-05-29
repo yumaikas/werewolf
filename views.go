@@ -25,6 +25,9 @@ var outlineStyles = `
 .outline-node-inner {
 	margin-left: 20px;
 }
+.hidden {
+	display: none;
+}
 `
 
 func HomePageView(w io.Writer, nodes []OutlineNodeDB) {
@@ -46,11 +49,19 @@ func renderNodesInOutlineOrder(nodes []*OutlineTree) func(Context) {
 		// Get the top node, and then emit a link to it, calling it "UP"
 		if len(nodes) > 0 {
 			top := *nodes[0]
-			Div(Atr,
-				Str("Commands: "),
-				A(Atr.Href(parentLink(top)), Str("Up")),
-				A(Atr.UnsafeHref("javascript:werewolf.expandAll();"), Str("Expand all")),
-				A(Atr.UnsafeHref("javascript:werewolf.collapseAll();"), Str("Collapse all")),
+			Div(Atr.Id("top-bar"),
+				// Hide this div by default
+				Div(Atr.Id("message-bar").Class("hidden"), Str("If you see this, it's a bug")),
+				Div(Atr.Id("command-bar"),
+					Str("Commands: "),
+					A(Atr.Href(parentLink(top)), Str("Up")),
+					Str(" "),
+					A(Atr.UnsafeHref("javascript:werewolf.expandAll();"), Str("Expand all")),
+					Str(" "),
+					A(Atr.UnsafeHref("javascript:werewolf.collapseAll();"), Str("Collapse all")),
+					Str(" "),
+					A(Atr.UnsafeHref("javascript:werewolf.beginCreateNode();"), Str("Create Node")),
+				),
 				Hr(),
 			)(ctx)
 

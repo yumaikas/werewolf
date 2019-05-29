@@ -2,6 +2,18 @@ var dom = {};
 dom.sel = function(selector) {
     return document.querySelectorAll(selector);
 }
+
+dom.id = function(id) {
+    return document.getElementById(id);
+}
+
+dom.foreach = function (sel, fn) {
+    var nodes = dom.sel(sel);
+    for(var i=0; i< nodes.length;i++) {
+        var n = nodes[i];
+        fn(n, i);
+    }
+}
 dom.create = function(element) {
     return document.createElement(element);
 }
@@ -117,8 +129,9 @@ var atr = function() {
 // - WIP: There's a start on the back end for this
 // TODO: Add UI for deleting nodes
 // TODO: Add UI for re-ordering and re-paretning nodes
+// TODO: Figure out how to add a global shortcut (maybe Alt+/?) for entering command mode
+// TODO: Figure out how to make a navigation mode.
 
-// A joke name 
 var lunacy = (function() {
     var exports = {};
     exports.createNodeFrom = function(parentId, outline_order, content) {
@@ -191,35 +204,108 @@ var werewolf = (function() {
         }
     }
 
+    exports.flashMessage = function(message) {
+        var messageBar = dom.id("message-bar");
+        messageBar.classList.remove("hidden");
+        messageBar.innerHTML = message;
+        dom.id("command-bar").classList.add("hidden");
+    }
+    exports.clearFlash = function() {
+        var messageBar = dom.id("message-bar");
+        messageBar.classList.add("hidden");
+        messageBar.innerHTML = "";
+        dom.id("command-bar").classList.remove("hidden");
+    }
+
     // An attempt an setting tap "modes"
     exports.setTapFunc = function(handler) {
-        nodeTapFunc = handler;
+        nodeClickFunc = handler;
     }
     exports.beginCreateNode = function() {
-        exports.setTabFunc(createNodeClick);
+        exports.setTapFunc(exports.createNodeClick);
+        exports.flashMessage("Where do you want to create the node?");
     };
 
-
+    var newNodeSeq = 0;
     exports.createNodeClick = function(event) {
+        exports.clearFlash();
         var child = event.target;
         var id = event.target.dataset.id;
+        // Find the number of direct children of the node in question.
         var content = child.innerHTML.trim();
+        newNodeSeq++;
+        var newNodeNum = newNodeSeq;
+        var inputId = "new-node-" + newNodeSeq;
+        var createBtnId = "save-new-node-" + newNodeSeq;
+        var portDivId  = "new-node-div-" + newNodeSeq;
 
-        child.innerHTML = content + t.label("Content:", t.input()).html();
+        // So, we need to 
+        child.innerHTML = content + 
+            t.div(atr().id(portDivId),
+                    t.label(atr(), "New node:", 
+                        t.input(atr().type("text").id(inputId)),
+                        t.button(atr().id(createBtnId), "Create!"
+                            ))).html();
+
+        var input = dom.id(inputId);
+        var saveBtn = dom.id(createBtnId);
+        var portDiv = dom.id(portDivId);
+        
+        var clickHandler = exports.requestNodeCreation(portDiv, input, saveBtn, id);
+
+        input.addEventListener('keyup', eatSpace);
+        saveBtn.addEventListener('click', clickHandler);
     };
+
+    exports.requestNodeCreation = function(portDiv, input, button, parentId) {
+        var handler = function(event) {
+            // Keep this from bubbling up to the summary/details element
+            event.preventDefault();
+            var numChildren = dom.sel("#node-"+ parentId +">details").length;
+            reqwest({
+                url:"/node/create/",
+                method: "post",
+                data: {
+                    content: input.value,
+                    parent_id: parentId,
+                    outline_order: numChildren + 1
+                }
+            }).then(function(data) {
+                // For now, reload the page.
+                location.reload();
+                // TODO
+            }).fail(function(err) {
+                console.error(err);
+            })
+            button.removeEventListener('click', handler);
+            input.removeEventListener('keyup', eatSpace);
+            portDiv.delete();
+        }
+        return handler;
+    }
+
+    function eatSpace(event) {
+        if (event.code === "Space") {
+            event.preventDefault();
+        }
+    }
 
     exports.nodeEditClick = function(event) {
         var child = event.target;
         var id = event.target.dataset.id;
         // Clean this up?
         var content = child.innerHTML.trim();
-        child.innerHTML = t.input(atr().id(inputId(id).id).type("text").value(content)).html() +
-                t.button(atr().id(saveId(id).id), "Save").html();
+        child.innerHTML = t.input(
+                atr().id(inputId(id).id).
+                type("text").value(content)
+                ).html() +
+            t.button(atr().id(saveId(id).id), "Save").html();
 
         //'<input '+inputId(id).attr+' type="text" value="'+content+'"><button '+saveId(id).attr+'>Save</button>' ;
         // Try to fire this off after the DOM has been updated?
         nodeButtonById(id).addEventListener('click', exports.nodeSaveClick(child, id));
-        nodesInLimbo.add(child)
+        nodeInputById(id).addEventListener('keyup', eatSpace);
+        nodesInLimbo.add(child);
     }
 
     exports.nodeSaveClick = function(inLimbo, id) {
@@ -248,9 +334,7 @@ var werewolf = (function() {
 })();
 
 window.onload = function() {
-    var nodes = dom.sel(".outline-node .outline-node-content");
-    for(var i=0; i< nodes.length;i++) {
-        var n = nodes[i];
+    dom.foreach(".outline-node .outline-node-content", function(n) {
         n.addEventListener('click', werewolf.nodeClick);
-    }
+    });
 }
