@@ -325,9 +325,8 @@ func Markdown(content string) func(Context) {
 
 func Str(content string) func(Context) {
 	return func(ctx Context) {
-		ctx.startLine()
-		template.HTMLEscape(ctx.w, []byte(content))
-		ctx.endLine()
+		// Remove the being/end lines here, to make it so that tags can be on a single line
+		template.HTMLEscape(ctx.w, bytes.Trim([]byte(content), " \t\r\n"))
 	}
 }
 
@@ -396,6 +395,19 @@ func (ctx Context) WriteTags(inner ...func(ctx Context)) {
 	innerCtx := Context{ctx.indentCount + 1, ctx.w, ctx.themeName}
 	for _, fn := range inner {
 		fn(innerCtx)
+	}
+}
+
+func WriteInlineTag(tagname string, attributes AttributeChain, inner ...func(ctx Context)) func(ctx Context) {
+	return func(ctx Context) {
+		ctx.startLine()
+		ctx.write("<")
+		ctx.write(tagname)
+		ctx.writeAttributes(attributes)
+		ctx.write(">")
+		ctx.WriteTags(inner...)
+		ctx.write("</" + tagname + ">")
+		ctx.endLine()
 	}
 }
 

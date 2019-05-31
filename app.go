@@ -89,7 +89,7 @@ func CreateNodeReq(w http.ResponseWriter, r *http.Request) {
 	die(err)
 	// TODO: Return node later
 	// If everything succeeds, write out the id into the response
-	fmt.Fprintf(w, "%s", id)
+	fmt.Fprintf(w, "%v", id)
 }
 
 func ReparentNode(w http.ResponseWriter, r *http.Request) {

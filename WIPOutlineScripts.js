@@ -28,6 +28,17 @@ var atr = function() {
     var ATTRIBUTE_HAS_VALUE = 0;
     var ATTRIBUTE_IS_VOID = 1;
 
+    self.add = function(name, val) {
+        pairs.push({name: name, value: val, type: ATTRIBUTE_HAS_VALUE});
+        return self;
+    }
+
+    self.addVoid = function(name) {
+        pairs.push({name: name, type: ATTRIBUTE_IS_VOID});
+        return self;
+    }
+
+
     function attributesWithValues(...names) {
         for (var i = 0; i < names.length;i++) {
             let name = names[i];
@@ -127,8 +138,9 @@ var atr = function() {
 //
 // TODO: Add UI for creating new nodes
 // - WIP: There's a start on the back end for this
-// TODO: Add UI for deleting nodes
+// TODO: Add UI for deleting/archiving nodes
 // TODO: Add UI for re-ordering and re-paretning nodes
+// TODO: 
 // TODO: Figure out how to add a global shortcut (maybe Alt+/?) for entering command mode
 // TODO: Figure out how to make a navigation mode.
 
@@ -259,6 +271,7 @@ var werewolf = (function() {
 
     exports.requestNodeCreation = function(portDiv, input, button, parentId) {
         var handler = function(event) {
+            var content = input.value;
             // Keep this from bubbling up to the summary/details element
             event.preventDefault();
             var numChildren = dom.sel("#node-"+ parentId +">details").length;
@@ -266,20 +279,45 @@ var werewolf = (function() {
                 url:"/node/create/",
                 method: "post",
                 data: {
-                    content: input.value,
+                    content: content,
                     parent_id: parentId,
                     outline_order: numChildren + 1
                 }
             }).then(function(data) {
+                var newId = Number.parseInt(data, 10);
+                // WIP
+                console.log(data);
                 // For now, reload the page.
-                location.reload();
-                // TODO
+                // location.reload();
+                // TODO append new node under here
+                var newNode = t.details(
+                        atr().class("outline-node outline-node-inner").
+                        add("open", "true").
+                        id("node-"+newId),
+                        t.summary(atr(),
+                            " ",
+                            t.span(atr().
+                                add("data-id", newId.toString()).
+                                class("outline-node-content"), content),
+                                " ",
+                                t.a(atr().href("/node/"+newId+"/page"), "(Zoom)")
+                            ),
+                        ).html();
+                dom.id("node-"+parentId).innerHTML += newNode;
+                dom.foreach(
+                        '#node-'+parentId+' .outline-node-content', 
+                        function(elem) { elem.addEventListener('click', exports.nodeClick); });
+
+                //toClick.addEventListener('click', werewolf.nodeClick);
+                // Set event lister
+                exports.setTapFunc(exports.nodeEditClick);
             }).fail(function(err) {
                 console.error(err);
+                exports.setTapFunc(exports.nodeEditClick);
             })
             button.removeEventListener('click', handler);
             input.removeEventListener('keyup', eatSpace);
-            portDiv.delete();
+            portDiv.remove();
         }
         return handler;
     }
@@ -329,7 +367,7 @@ var werewolf = (function() {
             });
         };
     };
-    nodeClickFunc = exports.nodeEditClick;
+    exports.setTapFunc(exports.nodeEditClick);
     return exports;
 })();
 

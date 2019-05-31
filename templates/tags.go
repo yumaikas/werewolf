@@ -55,7 +55,7 @@ func Title(attributes AttributeChain, inner ...func(Context)) func(Context) {
 }
 
 func A(attributes AttributeChain, inner ...func(Context)) func(Context) {
-	return WriteTag("a", attributes, inner...)
+	return WriteInlineTag("a", attributes, inner...)
 }
 func P(attributes AttributeChain, inner ...func(Context)) func(Context) {
 	return WriteTag("p", attributes, inner...)
