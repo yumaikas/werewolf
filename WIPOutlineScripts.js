@@ -1,4 +1,9 @@
 var dom = {};
+
+dom.digSel = function(node, selector) {
+    return node.querySelectorAll(selector);
+};
+
 dom.sel = function(selector) {
     return document.querySelectorAll(selector);
 }
@@ -137,7 +142,6 @@ var atr = function() {
 // edit mode, there should be some kind of "save" button for it
 //
 // TODO: Add UI for creating new nodes
-// - WIP: There's a start on the back end for this
 // TODO: Add UI for deleting/archiving nodes
 // TODO: Add UI for re-ordering and re-paretning nodes
 // TODO: 
@@ -285,11 +289,8 @@ var werewolf = (function() {
                 }
             }).then(function(data) {
                 var newId = Number.parseInt(data, 10);
-                // WIP
                 console.log(data);
                 // For now, reload the page.
-                // location.reload();
-                // TODO append new node under here
                 var newNode = t.details(
                         atr().class("outline-node outline-node-inner").
                         add("open", "true").
@@ -367,6 +368,14 @@ var werewolf = (function() {
             });
         };
     };
+    exports.toggleNode = function(event) {
+        var id = dom.digSel(event.target, "span")[0].dataset.id;
+        // WIP: Set it so that node open/closed state is kept handy
+        // WIP: And saved to the server. 
+        // TODO: save this state server-side
+        // TODO: Save this in localStorage, t
+
+    }
     exports.setTapFunc(exports.nodeEditClick);
     return exports;
 })();
