@@ -1,4 +1,4 @@
-# Werewolf: An Artisnal Web-based outliner
+# Werewolf: An Artisanal Web-based outliner
 
 This is a Work in progress web outliner that I plan on using to help augment how I approach large systems and long term projects.
 
@@ -26,8 +26,7 @@ I'm going to try to use this as a deferred work tracker for the team of myself.
 
 I plan on taking a little time every day I sit down to work on this and try to knock off at least one or two TODOs, or make them clearer, so that people other than myself could stand a chance of understanding them.
 
--------
-
+```
 app.go:// TODO: Also detect and update the meta attributes of the node, if present
 app.go:	// TODO: Return node later
 main.go:	// TODO: Create a real db init function
@@ -41,3 +40,4 @@ WIPOutlineScripts.js:// TODO: Add UI for re-ordering and re-paretning nodes
 WIPOutlineScripts.js:            // TODO: Clean this up on the server side
 templates/templates.go:// TODO: Come back to this if I find it works better "gopkg.in/russross/blackfriday.v2"
 templates/templates.go:// TODO: integrate "github.com/microcosm-cc/bluemonday" into this code if I start trusting more than one user.
+```
