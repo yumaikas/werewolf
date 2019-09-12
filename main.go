@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 var runTests = flag.Bool("test", false, "Set to run tests")
@@ -15,17 +16,20 @@ var runServer = flag.Bool("serve", false, "Set to run web server")
 func main() {
 	flag.Parse()
 	fmt.Println("Werewolf is an outliner that works based on SQLite and GoLua")
-	// TODO: Create a real db init function
-	TestInitDb()
 	if flag.NFlag() == 0 {
 		flag.PrintDefaults()
 	}
 	if *runTests {
 		// Throw testing behind a CLI flag
+		// TODO: Create a real db init function
+		TestInitDb()
 		TestDbEX()
 	}
 
 	if *runServer {
+		InitDb()
+		CreateDb()
+
 		r := chi.NewRouter()
 		r.Use(middleware.RequestID)
 		r.Use(middleware.RealIP)

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	. "yumaikas/werewolf/templates"
+	. "werewolf/templates"
 )
 
 func render(w io.Writer, template func(Context)) {
